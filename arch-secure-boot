@@ -8,10 +8,10 @@ mkdir -p "$DIR" "$KEYSDIR"
 
 [ -f "$DIR/config" ] && source "$DIR/config"
 
+ESP="${ESP:-/efi}"
+EFI="${EFI:-/EFI/arch}"
 KERNEL="${KERNEL:-linux}"
 NAME="${NAME:-secure-boot-$KERNEL}"
-ESP="${ESP:-/efi}"
-EFI="${EFI:-/EFI/$KERNEL}"
 
 CMDLINE=/etc/kernel/cmdline
 [ -f "$CMDLINE" ] || CMDLINE=/proc/cmdline
