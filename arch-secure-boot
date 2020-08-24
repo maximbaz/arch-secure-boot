@@ -17,7 +17,10 @@ CMDLINE=/etc/kernel/cmdline
 [ -f "$CMDLINE" ] || CMDLINE=/proc/cmdline
 
 case "$1" in
-    generate)
+    generate-snapshots)
+        snapper --no-dbus -t 0 -c root list --disable-used-space --columns number,date,description > "$ESP/snapshots.txt"
+        ;;
+    generate-efi)
         tmp="$(mktemp -d)"
         trap 'rm -rf $tmp' EXIT
         cd "$tmp"

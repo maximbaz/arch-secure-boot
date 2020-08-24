@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Generating snapshots list for recovery
+When = PostTransaction
+Exec = /usr/bin/arch-secure-boot generate-snapshots

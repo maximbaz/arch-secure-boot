@@ -7,6 +7,6 @@ Target = usr/lib/initcpio/*
 Target = boot/intel-ucode.img
 
 [Action]
-Description = Generating ArchLinux Secure Boot images
+Description = Generating signed EFI boot files
 When = PostTransaction
-Exec = /usr/bin/arch-secure-boot generate
+Exec = /usr/bin/arch-secure-boot generate-efi
