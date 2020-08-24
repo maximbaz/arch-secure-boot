@@ -6,9 +6,9 @@ if %1 == "" then
         echo "Find snapshot ID to boot and press Ctrl+Q (opening file in 5s)"
         stall 5000000
         edit snapshots.txt
-        echo "To boot in a snapshot:     startup.nsh <snapshot-id>"
-        echo "To use LTS kernel:         startup.nsh <snapshot-id> lts"
-        echo "To see the list again:     startup.nsh"
+        echo "To boot in a snapshot:     recovery.nsh <snapshot-id>"
+        echo "To use LTS kernel:         recovery.nsh <snapshot-id> lts"
+        echo "To see the list again:     recovery.nsh"
     else
         echo "No snapshot descriptions available"
     endif

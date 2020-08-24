@@ -23,7 +23,7 @@ case "$1" in
         cd "$tmp"
 
         cp "$CMDLINE" cmdline
-        sed "s/%%NAME%%/$NAME/g" "$DIR/startup.nsh" > startup.nsh
+        sed "s/%%NAME%%/$NAME/g" "$DIR/recovery.nsh" > recovery.nsh
 
         cat /boot/intel-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
         cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME-efi-shell-unsigned.efi"
@@ -52,7 +52,7 @@ case "$1" in
         done
 
         mkdir -p "$ESP/$EFI"
-        cp startup.nsh "$ESP"
+        cp recovery.nsh "$ESP"
         for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
             cp "${NAME}${flavor}.efi" "$ESP/$EFI"
         done
