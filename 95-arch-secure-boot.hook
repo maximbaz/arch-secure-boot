@@ -1,0 +1,12 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = File
+Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/initcpio/*
+Target = boot/intel-ucode.img
+
+[Action]
+Description = Generating ArchLinux Secure Boot images
+When = PostTransaction
+Exec = /usr/bin/arch-secure-boot generate
