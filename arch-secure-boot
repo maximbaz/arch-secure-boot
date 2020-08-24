@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -e
+
+DIR="/etc/arch-secure-boot"
+KEYSDIR="$DIR/keys"
+mkdir -p "$DIR" "$KEYSDIR"
+
+[ -f "$DIR/config" ] && source "$DIR/config"
+
+KERNEL="${KERNEL:-linux}"
+NAME="${NAME:-secure-boot-$KERNEL}"
+ESP="${ESP:-/efi}"
+EFI="${EFI:-/EFI/$KERNEL}"
+
+CMDLINE=/etc/kernel/cmdline
+[ -f "$CMDLINE" ] || CMDLINE=/proc/cmdline
+
+case "$1" in
+    generate)
+        tmp="$(mktemp -d)"
+        trap 'rm -rf $tmp' EXIT
+        cd "$tmp"
+
+        cp "$CMDLINE" cmdline
+
+        cat /boot/intel-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
+        cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME-efi-shell-unsigned.efi"
+
+        objcopy \
+            --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
+            --add-section .cmdline=cmdline --change-section-vma .cmdline=0x30000 \
+            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux=0x40000 \
+            --add-section .initrd=ucode-initramfs.img --change-section-vma .initrd=0x3000000 \
+            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-unsigned.efi"
+
+        objcopy \
+            --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
+            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux=0x40000 \
+            --add-section .initrd="/boot/initramfs-$KERNEL-fallback.img" --change-section-vma .initrd=0x3000000 \
+            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-recovery-unsigned.efi"
+
+        objcopy \
+            --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
+            --add-section .linux=/boot/vmlinuz-linux-lts --change-section-vma .linux=0x40000 \
+            --add-section .initrd=/boot/initramfs-linux-lts-fallback.img --change-section-vma .initrd=0x3000000 \
+            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-recovery-lts-unsigned.efi"
+
+        for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
+            sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "${NAME}${flavor}.efi" "${NAME}${flavor}-unsigned.efi"
+        done
+
+        mkdir -p "$ESP/$EFI"
+        for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
+            cp "${NAME}${flavor}.efi" "$ESP/$EFI"
+        done
+        ;;
+
+    add-efi)
+        entry="$EFI/$NAME.efi"
+        efibootmgr -d "$(findmnt -n -o SOURCE -T "$ESP")" -c -l "${entry//\//\\}" -L "$NAME"
+        ;;
+
+    enroll-keys)
+        cd "$KEYSDIR"
+
+        efi-updatevar -e -f KEK.esl KEK
+        efi-updatevar -e -f db.esl db
+        efi-updatevar -f PK.auth PK
+        ;;
+
+    generate-keys)
+        cd "$KEYSDIR"
+
+        uuid="$(uuidgen --random)"
+        echo "$uuid" > uuid
+
+        for key in PK KEK db; do
+            openssl req -new -x509 -newkey rsa:2048 -subj "/CN=SecureBoot $key/" -keyout "$key.key" -out "$key.crt" -days 3650 -nodes -sha256
+            cert-to-efi-sig-list -g "$uuid" "$key.crt" "$key.esl"
+            sign-efi-sig-list -k "$key.key" -c "$key.crt" "$key" "$key.esl" "$key.auth"
+        done
+
+        chmod 0400 *.{key,auth}
+        ;;
+
+    *)
+        echo >&2 "Usage: $0 <generate|add-efi|generate-keys|enroll-keys>"
+        exit 1
+        ;;
+esac
