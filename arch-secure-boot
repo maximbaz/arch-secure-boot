@@ -24,11 +24,11 @@ print_config() {
 $cmd
 
 == Config ==
-ESP:     $ESP
-EFI:     $EFI
-KERNEL:  $KERNEL
-NAME:    $NAME
-CMDLINE: $CMDLINE
+ESP=$ESP
+EFI=$EFI
+KERNEL=$KERNEL
+NAME=$NAME
+CMDLINE=$CMDLINE
 EOF
 }
 trap 'print_config' ERR

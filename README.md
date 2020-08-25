@@ -4,6 +4,11 @@
 
 The package is available on AUR: [arch-secure-boot](https://aur.archlinux.org/packages/arch-secure-boot/)
 
+## Configuration
+
+See the available configuration options in the top of the script.
+Add your overrides to `/etc/arch-secure-boot/config`.
+
 ## Commands
 
 - `arch-secure-boot generate-keys` generates new keys for Secure Boot
