@@ -34,9 +34,18 @@ EOF
 trap 'print_config' ERR
 
 case "$1" in
+    initial-setup)
+        "$0" generate-keys
+        "$0" enroll-keys
+        "$0" generate-efi
+        "$0" add-efi
+        "$0" generate-snapshots
+        ;;
+
     generate-snapshots)
         snapper --no-dbus -t 0 -c root list --disable-used-space --columns number,date,description > "$ESP/snapshots.txt"
         ;;
+
     generate-efi)
         tmp="$(mktemp -d)"
         trap 'rm -rf $tmp' EXIT
@@ -107,7 +116,7 @@ case "$1" in
         ;;
 
     *)
-        echo >&2 "Usage: $0 <generate-snapshots|generate-efi|add-efi|generate-keys|enroll-keys>"
+        echo >&2 "Usage: $0 <initial-setup|generate-snapshots|generate-efi|add-efi|generate-keys|enroll-keys>"
         exit 1
         ;;
 esac

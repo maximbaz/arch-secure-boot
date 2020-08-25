@@ -16,6 +16,7 @@ Add your overrides to `/etc/arch-secure-boot/config`.
 - `arch-secure-boot generate-efi` creates several images signed with Secure Boot keys
 - `arch-secure-boot add-efi` adds UEFI entry for the main Secure Boot image
 - `arch-secure-boot generate-snapshots` generates a list of btrfs snapshots for recovery
+- `arch-secure-boot initial-setup` runs all the steps in the proper order
 
 ## Generated images
 
