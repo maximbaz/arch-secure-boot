@@ -33,6 +33,11 @@ EOF
 }
 trap 'print_config' ERR
 
+error() {
+    echo >&2 "$@"
+    exit 1
+}
+
 case "$1" in
     initial-setup)
         "$0" generate-keys
@@ -47,6 +52,8 @@ case "$1" in
         ;;
 
     generate-efi)
+        find "$KEYSDIR" -mindepth 1 | read || error "Error: keys are not generated yet."
+
         tmp="$(mktemp -d)"
         trap 'rm -rf $tmp' EXIT
         cd "$tmp"
@@ -91,12 +98,14 @@ case "$1" in
 
     add-efi)
         entry="$EFI/$NAME.efi"
+        [ -f "$entry" ] || error "Error: EFI images are not generated yet."
         efibootmgr -d "$(findmnt -n -o SOURCE -T "$ESP")" -c -l "${entry//\//\\}" -L "$NAME"
         ;;
 
     enroll-keys)
-        cd "$KEYSDIR"
+        find "$KEYSDIR" -mindepth 1 | read || error "Error: keys are not generated yet."
 
+        cd "$KEYSDIR"
         efi-updatevar -e -f KEK.esl KEK
         efi-updatevar -e -f db.esl db
         efi-updatevar -f PK.auth PK
@@ -118,7 +127,6 @@ case "$1" in
         ;;
 
     *)
-        echo >&2 "Usage: $0 <initial-setup|generate-snapshots|generate-efi|add-efi|generate-keys|enroll-keys>"
-        exit 1
+        error "Usage: $0 <initial-setup|generate-snapshots|generate-efi|add-efi|generate-keys|enroll-keys>"
         ;;
 esac
