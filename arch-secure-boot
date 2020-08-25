@@ -98,7 +98,7 @@ case "$1" in
 
     add-efi)
         entry="$EFI/$NAME.efi"
-        [ -f "$entry" ] || error "Error: EFI images are not generated yet."
+        [ -f "$ESP/$entry" ] || error "Error: EFI images are not generated yet."
         efibootmgr -d "$(findmnt -n -o SOURCE -T "$ESP")" -c -l "${entry//\//\\}" -L "$NAME"
         ;;
 
