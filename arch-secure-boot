@@ -60,7 +60,7 @@ case "$1" in
         cp "$CMDLINE" cmdline
         sed "s/%%NAME%%/$NAME/g" "$DIR/recovery.nsh" > recovery.nsh
 
-        cat /boot/intel-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
+        cat /boot/*-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
         cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME-efi-shell-unsigned.efi"
 
         objcopy \

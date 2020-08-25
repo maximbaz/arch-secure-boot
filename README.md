@@ -21,7 +21,7 @@ Add your overrides to `/etc/arch-secure-boot/config`.
 ## Generated images
 
 - `secure-boot-linux.efi` - the main image
-  - `vmlinuz-linux` + `initramfs-linux` + `intel-ucode` + hardcoded `cmdline`
+  - `vmlinuz-linux` + `initramfs-linux` + `*-ucode` + hardcoded `cmdline`
 - `secure-boot-linux-efi-shell.efi` - UEFI shell that is used to boot into a snapshot
   - needed only because default Dell UEFI shell is buggy
 - `secure-boot-linux-recovery.efi` - recovery image that can be a used to boot from snapshot

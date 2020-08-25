@@ -4,7 +4,7 @@ Operation = Upgrade
 Type = File
 Target = usr/lib/modules/*/vmlinuz
 Target = usr/lib/initcpio/*
-Target = boot/intel-ucode.img
+Target = boot/*-ucode.img
 
 [Action]
 Description = Generating signed EFI boot files
