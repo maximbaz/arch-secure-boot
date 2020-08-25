@@ -16,6 +16,23 @@ NAME="${NAME:-secure-boot-$KERNEL}"
 CMDLINE=/etc/kernel/cmdline
 [ -f "$CMDLINE" ] || CMDLINE=/proc/cmdline
 
+cmd="$0 $@"
+print_config() {
+    cat >&2 << EOF
+
+== Command ==
+$cmd
+
+== Config ==
+ESP:     $ESP
+EFI:     $EFI
+KERNEL:  $KERNEL
+NAME:    $NAME
+CMDLINE: $CMDLINE
+EOF
+}
+trap 'print_config' ERR
+
 case "$1" in
     generate-snapshots)
         snapper --no-dbus -t 0 -c root list --disable-used-space --columns number,date,description > "$ESP/snapshots.txt"
