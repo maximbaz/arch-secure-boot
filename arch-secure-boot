@@ -80,6 +80,8 @@ case "$1" in
             sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "${NAME}${flavor}.efi" "${NAME}${flavor}-unsigned.efi"
         done
 
+        sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" /usr/lib/fwupd/efi/fwupdx64.efi
+
         mkdir -p "$ESP/$EFI"
         cp recovery.nsh "$ESP"
         for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do

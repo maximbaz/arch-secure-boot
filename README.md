@@ -29,6 +29,8 @@ Add your overrides to `/etc/arch-secure-boot/config`.
 - `secure-boot-linux-lts-recovery.efi` - recovery LTS image that can be used to boot from snapshot
   - `vmlinuz-linux-lts` + `initramfs-linux-lts-fallback`
 
+`fwupdx64.efi` image is also being signed.
+
 ## Initial setup
 
 - BIOS: Set admin password, disable Secure Boot, delete all Secure Boot keys
