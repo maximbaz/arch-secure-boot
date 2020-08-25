@@ -44,7 +44,6 @@ case "$1" in
         "$0" enroll-keys
         "$0" generate-efi
         "$0" add-efi
-        "$0" generate-snapshots
         ;;
 
     generate-snapshots)
