@@ -14,8 +14,8 @@ if %1 == "" then
     endif
 else
     if %2 == "lts" then
-        \EFI\arch\%%NAME%%-lts-recovery.efi cryptdevice=LABEL=luks:luks:allow-discards root=LABEL=btrfs rw rootflags=subvol=snapshots/%1/snapshot
+        \EFI\arch\%%NAME%%-lts-recovery.efi %%CMDLINE%%
     else
-        \EFI\arch\%%NAME%%-recovery.efi cryptdevice=LABEL=luks:luks:allow-discards root=LABEL=btrfs rw rootflags=subvol=snapshots/%1/snapshot
+        \EFI\arch\%%NAME%%-recovery.efi %%CMDLINE%%
     endif
 endif

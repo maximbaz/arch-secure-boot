@@ -12,6 +12,8 @@ ESP="${ESP:-/efi}"
 EFI="${EFI:-/EFI/arch}"
 KERNEL="${KERNEL:-linux}"
 NAME="${NAME:-secure-boot-$KERNEL}"
+SUBVOLUME_ROOT="${SUBVOLUME_ROOT:-root}"
+SUBVOLUME_SNAPSHOT="${SUBVOLUME_SNAPSHOT:-snapshots/%1/snapshot}" # %1 is replaced with snapshot ID
 
 CMDLINE=/etc/kernel/cmdline
 [ -f "$CMDLINE" ] || CMDLINE=/proc/cmdline
@@ -58,7 +60,8 @@ case "$1" in
         cd "$tmp"
 
         cp "$CMDLINE" cmdline
-        sed "s/%%NAME%%/$NAME/g" "$DIR/recovery.nsh" > recovery.nsh
+        sed "s|%%NAME%%|$NAME|g; s|%%CMDLINE%%|$(cat cmdline)|g" "$DIR/recovery.nsh" > recovery.nsh
+        sed -i "s|subvol=$SUBVOLUME_ROOT|subvol=$SUBVOLUME_SNAPSHOT|g" recovery.nsh
 
         cat /boot/*-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
         cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME-efi-shell-unsigned.efi"
