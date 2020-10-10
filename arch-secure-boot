@@ -101,7 +101,9 @@ case "$1" in
     add-efi)
         entry="$EFI/$NAME.efi"
         [ -f "$ESP/$entry" ] || error "Error: EFI images are not generated yet."
-        efibootmgr -d "$(findmnt -n -o SOURCE -T "$ESP")" -c -l "${entry//\//\\}" -L "$NAME"
+        mount="$(findmnt -n -o SOURCE -T "$ESP")"
+        partition="${mount##*[!0-9]}"
+        efibootmgr -d "$mount" -p "$partition" -c -l "${entry//\//\\}" -L "$NAME"
         ;;
 
     enroll-keys)
