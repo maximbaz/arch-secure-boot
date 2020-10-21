@@ -41,7 +41,7 @@ Add your overrides to `/etc/arch-secure-boot/config`.
 ## Recovery instructions
 
 - BIOS: use admin password to boot into `efi-shell` image
-- Inspect recovery script using `edit FS0:\recovery.nsh`
+- Inspect recovery script using `edit FS0:\recovery.nsh` (if `FS0` is not your hard disk, try other `FSn`)
 - Run the script using `FS0:\recovery.nsh`
 - Once recovered, remove `efi-shell` entry from UEFI
 
