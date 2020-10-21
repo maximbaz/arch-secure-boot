@@ -43,9 +43,9 @@ error() {
 case "$1" in
     initial-setup)
         "$0" generate-keys
-        "$0" enroll-keys
         "$0" generate-efi
         "$0" add-efi
+        "$0" enroll-keys || true
         ;;
 
     generate-snapshots)
@@ -53,7 +53,9 @@ case "$1" in
         ;;
 
     generate-efi)
-        find "$KEYSDIR" -mindepth 1 | read || error "Error: keys are not generated yet."
+        echo "Generating EFI images..."
+
+        find "$KEYSDIR" -mindepth 1 | read || error "Error: Secure Boot keys are not generated yet."
 
         tmp="$(mktemp -d)"
         trap 'rm -rf $tmp' EXIT
@@ -99,14 +101,19 @@ case "$1" in
         ;;
 
     add-efi)
+        echo "Adding boot entries for EFI images..."
+
         entry="$EFI/$NAME.efi"
         [ -f "$ESP/$entry" ] || error "Error: EFI images are not generated yet."
         mount="$(findmnt -n -o SOURCE -T "$ESP")"
         partition="${mount##*[!0-9]}"
+
         efibootmgr -d "$mount" -p "$partition" -c -l "${entry//\//\\}" -L "$NAME"
         ;;
 
     enroll-keys)
+        echo "Enrolling Secure Boot keys..."
+
         find "$KEYSDIR" -mindepth 1 | read || error "Error: keys are not generated yet."
 
         cd "$KEYSDIR"
@@ -116,6 +123,8 @@ case "$1" in
         ;;
 
     generate-keys)
+        echo "Generating Secure Boot keys..."
+
         cd "$KEYSDIR"
 
         uuid="$(uuidgen --random)"
