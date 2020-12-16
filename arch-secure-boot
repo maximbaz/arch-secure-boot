@@ -131,7 +131,7 @@ case "$1" in
         echo "$uuid" > uuid
 
         for key in PK KEK db; do
-            openssl req -new -x509 -newkey rsa:2048 -subj "/CN=SecureBoot $key/" -keyout "$key.key" -out "$key.crt" -days 3650 -nodes -sha256
+            openssl req -new -x509 -newkey rsa:4096 -subj "/CN=SecureBoot $key/" -keyout "$key.key" -out "$key.crt" -days 3650 -nodes -sha256
             cert-to-efi-sig-list -g "$uuid" "$key.crt" "$key.esl"
             sign-efi-sig-list -k "$key.key" -c "$key.crt" "$key" "$key.esl" "$key.auth"
         done
