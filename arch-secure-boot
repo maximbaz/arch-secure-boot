@@ -12,8 +12,13 @@ ESP="${ESP:-/efi}"
 EFI="${EFI:-/EFI/arch}"
 KERNEL="${KERNEL:-linux}"
 NAME="${NAME:-secure-boot-$KERNEL}"
+SNAPPER_OPTIONS="${SNAPPER_OPTIONS:---no-dbus}"
 SUBVOLUME_ROOT="${SUBVOLUME_ROOT:-root}"
 SUBVOLUME_SNAPSHOT="${SUBVOLUME_SNAPSHOT:-snapshots/%1/snapshot}" # %1 is replaced with snapshot ID
+UCODE="${UCODE:-*}"
+
+SYSTEMD_BOOT="/EFI/systemd/systemd-bootx64.efi"
+SYSTEMD_SIGNED="/EFI/BOOT/BOOTX64.EFI"
 
 CMDLINE=/etc/kernel/cmdline
 [ -f "$CMDLINE" ] || CMDLINE=/proc/cmdline
@@ -40,6 +45,16 @@ error() {
     exit 1
 }
 
+if [[ "$UCODE" != "*" && "$UCODE" != "intel" && "$UCODE" != "amd" ]]; then
+    echo "UCODE config has to be iset to one of *, intel or amd."
+    exit 1
+fi
+
+if [[ -f "$ESP$SYSTEMD_BOOT" && "$EFI" != "/EFI/Linux" ]]; then
+    echo "Systemd-boot detected. EFI config must be set to /EFI/Linux"
+    exit 1
+fi
+
 case "$1" in
     initial-setup)
         "$0" generate-keys
@@ -49,7 +64,7 @@ case "$1" in
         ;;
 
     generate-snapshots)
-        snapper --no-dbus -t 0 -c root list --disable-used-space --columns number,date,description > "$ESP/snapshots.txt"
+        snapper ${SNAPPER_OPTIONS[@]} -t 0 -c root list --disable-used-space --columns number,date,description > "$ESP/snapshots.txt"
         ;;
 
     generate-efi)
@@ -65,7 +80,7 @@ case "$1" in
         sed "s|%%NAME%%|$NAME|g; s|%%CMDLINE%%|$(cat cmdline)|g" "$DIR/recovery.nsh" > recovery.nsh
         sed -i "s|subvol=$SUBVOLUME_ROOT|subvol=$SUBVOLUME_SNAPSHOT|g" recovery.nsh
 
-        cat /boot/*-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
+        cat /boot/$UCODE-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
         cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME-efi-shell-unsigned.efi"
 
         objcopy \
@@ -75,39 +90,48 @@ case "$1" in
             --add-section .initrd=ucode-initramfs.img --change-section-vma .initrd=0x3000000 \
             /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-unsigned.efi"
 
-        objcopy \
-            --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
-            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux=0x40000 \
-            --add-section .initrd="/boot/initramfs-$KERNEL-fallback.img" --change-section-vma .initrd=0x3000000 \
-            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-recovery-unsigned.efi"
+        for flavor in "${KERNEL#linux}" '-lts'; do
+            objcopy \
+                --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
+                --add-section .linux="/boot/vmlinuz-linux${flavor}" --change-section-vma .linux=0x40000 \
+                --add-section .initrd="/boot/initramfs-linux${flavor}-fallback.img" --change-section-vma .initrd=0x3000000 \
+                /usr/lib/systemd/boot/efi/linuxx64.efi.stub "${NAME%linux*}linux-recovery${flavor}-unsigned.efi"
+        done
 
-        objcopy \
-            --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
-            --add-section .linux=/boot/vmlinuz-linux-lts --change-section-vma .linux=0x40000 \
-            --add-section .initrd=/boot/initramfs-linux-lts-fallback.img --change-section-vma .initrd=0x3000000 \
-            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-recovery-lts-unsigned.efi"
-
-        for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
-            sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "${NAME}${flavor}.efi" "${NAME}${flavor}-unsigned.efi"
+        for flavor in "${KERNEL#linux}" "-recovery${KERNEL#linux}" '-recovery-lts' "${KERNEL#linux}-efi-shell"; do
+            sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "${NAME%linux*}linux${flavor}.efi" "${NAME%linux*}linux${flavor}-unsigned.efi"
         done
 
         sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" /usr/lib/fwupd/efi/fwupdx64.efi
 
+        if [ -f "$ESP$SYSTEMD_BOOT" ]; then
+            sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "$ESP$SYSTEMD_SIGNED" "$ESP$SYSTEMD_BOOT"
+        fi
+
         mkdir -p "$ESP/$EFI"
         cp recovery.nsh "$ESP"
-        for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
-            cp "${NAME}${flavor}.efi" "$ESP/$EFI"
+        for flavor in "${KERNEL#linux}" "-recovery${KERNEL#linux}" '-recovery-lts' "${KERNEL#linux}-efi-shell"; do
+            cp "${NAME%linux*}linux${flavor}.efi" "$ESP/$EFI"
         done
         ;;
 
     add-efi)
         echo "Adding boot entries for EFI images..."
 
+        if ! findmnt /sys/firmware/efi/efivars >/dev/null; then
+            mount -o ro,nosuid,nodev,noexec,relatime efivarfs -t efivarfs /sys/firmware/efi/efivars
+        fi
+        [[ "$(findmnt -n -o OPTIONS -T /sys/firmware/efi/efivars)" =~ ^ro ]] && mount -o remount,rw efivarfs
+
         entry="$EFI/$NAME.efi"
         [ -f "$ESP/$entry" ] || error "Error: EFI images are not generated yet."
         mount="$(findmnt -n -o SOURCE -T "$ESP")"
         partition="${mount##*[!0-9]}"
 
+        if [ -f "$ESP$SYSTEMD_SIGNED" ]; then
+            echo "Systemd-boot detected. Using it as main EFI entry"
+            entry="$SYSTEMD_SIGNED"
+        fi
         efibootmgr -d "$mount" -p "$partition" -c -l "${entry//\//\\}" -L "$NAME"
         ;;
 
