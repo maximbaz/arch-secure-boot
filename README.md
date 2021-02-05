@@ -1,5 +1,9 @@
 # UEFI Secure Boot for Arch Linux + btrfs snapshot recovery
 
+Highly opinionated setup that provides minimal Secure Boot for Arch Linux, and a few recovery tools.
+
+Bootloaders (such as `GRUB` or `systemd-boot`) are intentionally not supported, as they significantly increase the amount of code that runs during boot, therefore increasing the attack surface.
+
 ## Installation
 
 The package is available on AUR: [arch-secure-boot](https://aur.archlinux.org/packages/arch-secure-boot/)
@@ -7,7 +11,10 @@ The package is available on AUR: [arch-secure-boot](https://aur.archlinux.org/pa
 ## Configuration
 
 See the available configuration options in the top of the script.
+
 Add your overrides to `/etc/arch-secure-boot/config`.
+
+Most notably, set `KERNEL=linux-hardened` if you use hardened Linux.
 
 ## Commands
 
@@ -23,7 +30,7 @@ Add your overrides to `/etc/arch-secure-boot/config`.
 - `secure-boot-linux.efi` - the main image
   - `vmlinuz-linux` + `initramfs-linux` + `*-ucode` + hardcoded `cmdline`
 - `secure-boot-linux-efi-shell.efi` - UEFI shell that is used to boot into a snapshot
-  - needed only because default Dell UEFI shell is buggy
+  - because built-in UEFI shells are known to be buggy
 - `secure-boot-linux-recovery.efi` - recovery image that can be a used to boot from snapshot
   - `vmlinuz-linux` + `initramfs-linux-fallback`
 - `secure-boot-linux-lts-recovery.efi` - recovery LTS image that can be used to boot from snapshot
@@ -48,4 +55,4 @@ Add your overrides to `/etc/arch-secure-boot/config`.
 ## Related links:
 
 - https://github.com/gdamjan/secure-boot
-- https://github.com/andreyv/sbupdate/
+- https://github.com/andreyv/sbupdate
