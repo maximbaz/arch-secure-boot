@@ -14,7 +14,7 @@ if %1 == "" then
     endif
 else
     if %2 == "lts" then
-        \EFI\arch\%%NAME%%-lts-recovery.efi %%CMDLINE%%
+        \EFI\arch\%%NAME%%-recovery-lts.efi %%CMDLINE%%
     else
         \EFI\arch\%%NAME%%-recovery.efi %%CMDLINE%%
     endif
