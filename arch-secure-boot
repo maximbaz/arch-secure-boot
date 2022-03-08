@@ -62,7 +62,7 @@ case "$1" in
         trap 'rm -rf $tmp' EXIT
         cd "$tmp"
 
-        grep -v "^#" "$CMDLINE" > cmdline
+        grep -m1 -v "^#" "$CMDLINE" > cmdline
         sed "s|%%NAME%%|$NAME|g; s|%%CMDLINE%%|$(cat cmdline)|g" "$DIR/recovery.nsh" > recovery.nsh
         sed -i "s|subvol=$SUBVOLUME_ROOT|subvol=$SUBVOLUME_SNAPSHOT|g" recovery.nsh
 
