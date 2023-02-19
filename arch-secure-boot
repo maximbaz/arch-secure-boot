@@ -12,8 +12,11 @@ mkdir -p "$DIR" "$KEYSDIR" "$SBKEYSDIR"
 ESP="${ESP:-/efi}"
 EFI="${EFI:-/EFI/arch}"
 KERNEL="${KERNEL:-linux}"
-PREFIX="${PREFIX:-secure-boot}"
-NAME="${NAME:-$PREFIX-$KERNEL}"
+KERNEL_LTS="linux-lts"
+NAME_PREFIX="secure-boot"
+NAME="$NAME_PREFIX-$KERNEL"
+NAME_LTS="$NAME_PREFIX-$KERNEL_LTS"
+NAME_EFI_SHELL="$NAME_PREFIX-efi-shell"
 SUBVOLUME_ROOT="${SUBVOLUME_ROOT:-root}"
 SUBVOLUME_SNAPSHOT="${SUBVOLUME_SNAPSHOT:-snapshots/%1/snapshot}" # %1 is replaced with snapshot ID
 
@@ -31,8 +34,6 @@ $cmd
 ESP=$ESP
 EFI=$EFI
 KERNEL=$KERNEL
-PREFIX=$PREFIX
-NAME=$NAME
 CMDLINE=$CMDLINE
 EOF
 }
@@ -69,7 +70,7 @@ case "$1" in
         sed -i "s|subvol=$SUBVOLUME_ROOT|subvol=$SUBVOLUME_SNAPSHOT|g" recovery.nsh
 
         cat /boot/*-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
-        cp /usr/share/edk2-shell/x64/Shell_Full.efi "$PREFIX-efi-shell-unsigned.efi"
+        cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME_EFI_SHELL-unsigned.efi"
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
@@ -86,11 +87,11 @@ case "$1" in
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
-            --add-section .linux=/boot/vmlinuz-linux-lts --change-section-vma .linux=0x40000 \
-            --add-section .initrd=/boot/initramfs-linux-lts-fallback.img --change-section-vma .initrd=0x3000000 \
-            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$PREFIX-linux-lts-recovery-unsigned.efi"
+            --add-section .linux="/boot/vmlinuz-$KERNEL_LTS" --change-section-vma .linux=0x40000 \
+            --add-section .initrd="/boot/initramfs-$KERNEL_LTS-fallback.img" --change-section-vma .initrd=0x3000000 \
+            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME_LTS-recovery-unsigned.efi"
 
-        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-lts-recovery" "$PREFIX-efi-shell"; do
+        for image in "$NAME" "$NAME-recovery" "$NAME_LTS-recovery" "$NAME_EFI_SHELL"; do
             sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "$image.efi" "$image-unsigned.efi"
         done
 
@@ -98,7 +99,7 @@ case "$1" in
 
         mkdir -p "$ESP/$EFI"
         cp recovery.nsh "$ESP"
-        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-lts-recovery" "$PREFIX-efi-shell"; do
+        for image in "$NAME" "$NAME-recovery" "$NAME_LTS-recovery" "$NAME_EFI_SHELL"; do
             cp "$image.efi" "$ESP/$EFI"
         done
         ;;
