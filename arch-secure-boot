@@ -88,9 +88,9 @@ case "$1" in
             --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
             --add-section .linux=/boot/vmlinuz-linux-lts --change-section-vma .linux=0x40000 \
             --add-section .initrd=/boot/initramfs-linux-lts-fallback.img --change-section-vma .initrd=0x3000000 \
-            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$PREFIX-linux-recovery-lts-unsigned.efi"
+            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$PREFIX-linux-lts-recovery-unsigned.efi"
 
-        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-recovery-lts" "$PREFIX-efi-shell"; do
+        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-lts-recovery" "$PREFIX-efi-shell"; do
             sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "$image.efi" "$image-unsigned.efi"
         done
 
@@ -98,7 +98,7 @@ case "$1" in
 
         mkdir -p "$ESP/$EFI"
         cp recovery.nsh "$ESP"
-        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-recovery-lts" "$PREFIX-efi-shell"; do
+        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-lts-recovery" "$PREFIX-efi-shell"; do
             cp "$image.efi" "$ESP/$EFI"
         done
         ;;
