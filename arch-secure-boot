@@ -12,7 +12,8 @@ mkdir -p "$DIR" "$KEYSDIR" "$SBKEYSDIR"
 ESP="${ESP:-/efi}"
 EFI="${EFI:-/EFI/arch}"
 KERNEL="${KERNEL:-linux}"
-NAME="${NAME:-secure-boot-$KERNEL}"
+PREFIX="${PREFIX:-secure-boot}"
+NAME="${NAME:-$PREFIX-$KERNEL}"
 SUBVOLUME_ROOT="${SUBVOLUME_ROOT:-root}"
 SUBVOLUME_SNAPSHOT="${SUBVOLUME_SNAPSHOT:-snapshots/%1/snapshot}" # %1 is replaced with snapshot ID
 
@@ -30,6 +31,7 @@ $cmd
 ESP=$ESP
 EFI=$EFI
 KERNEL=$KERNEL
+PREFIX=$PREFIX
 NAME=$NAME
 CMDLINE=$CMDLINE
 EOF
@@ -67,7 +69,7 @@ case "$1" in
         sed -i "s|subvol=$SUBVOLUME_ROOT|subvol=$SUBVOLUME_SNAPSHOT|g" recovery.nsh
 
         cat /boot/*-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
-        cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME-efi-shell-unsigned.efi"
+        cp /usr/share/edk2-shell/x64/Shell_Full.efi "$PREFIX-efi-shell-unsigned.efi"
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
@@ -86,18 +88,18 @@ case "$1" in
             --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
             --add-section .linux=/boot/vmlinuz-linux-lts --change-section-vma .linux=0x40000 \
             --add-section .initrd=/boot/initramfs-linux-lts-fallback.img --change-section-vma .initrd=0x3000000 \
-            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-recovery-lts-unsigned.efi"
+            /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$PREFIX-linux-recovery-lts-unsigned.efi"
 
-        for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
-            sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "${NAME}${flavor}.efi" "${NAME}${flavor}-unsigned.efi"
+        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-recovery-lts" "$PREFIX-efi-shell"; do
+            sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" --output "$image.efi" "$image-unsigned.efi"
         done
 
         sbsign --key "$KEYSDIR/db.key" --cert "$KEYSDIR/db.crt" /usr/lib/fwupd/efi/fwupdx64.efi
 
         mkdir -p "$ESP/$EFI"
         cp recovery.nsh "$ESP"
-        for flavor in '' '-recovery' '-recovery-lts' '-efi-shell'; do
-            cp "${NAME}${flavor}.efi" "$ESP/$EFI"
+        for image in "$NAME" "$NAME-recovery" "$PREFIX-linux-recovery-lts" "$PREFIX-efi-shell"; do
+            cp "$image.efi" "$ESP/$EFI"
         done
         ;;
 
