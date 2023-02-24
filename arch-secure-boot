@@ -10,7 +10,7 @@ mkdir -p "$DIR" "$KEYSDIR" "$SBKEYSDIR"
 [ -f "$DIR/config" ] && source "$DIR/config"
 
 ESP="${ESP:-/efi}"
-EFI="${EFI:-/EFI/arch}"
+EFI="${EFI:-EFI/arch}"
 KERNEL="${KERNEL:-linux}"
 KERNEL_LTS="linux-lts"
 NAME_PREFIX="secure-boot"
