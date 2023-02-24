@@ -112,7 +112,7 @@ case "$1" in
     add-efi)
         echo "Adding boot entries for EFI images..."
 
-        entry="$EFI/$NAME.efi"
+        entry="/$EFI/$NAME.efi"
         [ -f "$ESP/$entry" ] || error "Error: EFI images are not generated yet."
         mount="$(findmnt -n -o SOURCE -T "$ESP")"
         partition="${mount##*[!0-9]}"
