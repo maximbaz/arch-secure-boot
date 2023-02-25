@@ -1,7 +1,7 @@
 [Trigger]
 Operation = Install
 Operation = Upgrade
-Type = File
+Type = Path
 Target = usr/lib/modules/*/vmlinuz
 Target = usr/lib/initcpio/*
 Target = boot/*-ucode.img
