@@ -1,10 +1,11 @@
 [Trigger]
 Operation = Install
 Operation = Upgrade
-Type = File
+Type = Path
 Target = usr/lib/modules/*/vmlinuz
 Target = usr/lib/initcpio/*
 Target = boot/*-ucode.img
+Target = usr/share/edk2-shell/x64/Shell_Full.efi
 
 [Action]
 Description = Generating signed EFI boot files
