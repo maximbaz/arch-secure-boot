@@ -78,35 +78,41 @@ case "$1" in
         osrel_offset="$(objdump -h /usr/lib/systemd/boot/efi/linuxx64.efi.stub | awk 'NF==7 {size=strtonum("0x"$3); offset=strtonum("0x"$4)} END {print size + offset}')"
         osrel_offset=$((osrel_offset + "$section_alignment" - osrel_offset % "$section_alignment"))
 
-        kernel_offset=$((osrel_offset + $(stat -Lc%s /etc/os-release)))
-        kernel_offset=$((kernel_offset + "$section_alignment" - kernel_offset % "$section_alignment"))
-
-        initrd_offset_from_default_kernel=$((kernel_offset + $(stat -Lc%s "/boot/vmlinuz-$KERNEL")))
-        initrd_offset_from_default_kernel=$((initrd_offset_from_default_kernel + "$section_alignment" - initrd_offset_from_default_kernel % "$section_alignment"))
-
-        initrd_offset_from_lts_kernel=$((kernel_offset + $(stat -Lc%s "/boot/vmlinuz-$KERNEL_LTS")))
-        initrd_offset_from_lts_kernel=$((initrd_offset_from_lts_kernel + "$section_alignment" - initrd_offset_from_lts_kernel % "$section_alignment"))
-
-        cmdline_offset=$((initrd_offset_from_default_kernel + $(stat -Lc%s ucode-initramfs.img)))
+        cmdline_offset=$((osrel_offset + $(stat -Lc%s /etc/os-release)))
         cmdline_offset=$((cmdline_offset + "$section_alignment" - cmdline_offset % "$section_alignment"))
+
+        initrd_offset_from_cmdline=$((cmdline_offset + $(stat -Lc%s cmdline)))
+        initrd_offset_from_cmdline=$((initrd_offset_from_cmdline + "$section_alignment" - initrd_offset_from_cmdline % "$section_alignment"))
+
+        initrd_offset_from_osrel=$((osrel_offset + $(stat -Lc%s /etc/os-release)))
+        initrd_offset_from_osrel=$((initrd_offset_from_osrel + "$section_alignment" - initrd_offset_from_osrel % "$section_alignment"))
+
+        default_kernel_offset=$((initrd_offset_from_cmdline + $(stat -Lc%s ucode-initramfs.img)))
+        default_kernel_offset=$((default_kernel_offset + "$section_alignment" - default_kernel_offset % "$section_alignment"))
+
+        fallback_kernel_offset=$((initrd_offset_from_osrel + $(stat -Lc%s "/boot/initramfs-$KERNEL-fallback.img")))
+        fallback_kernel_offset=$((fallback_kernel_offset + "$section_alignment" - fallback_kernel_offset % "$section_alignment"))
+
+        fallback_lts_kernel_offset=$((initrd_offset_from_osrel + $(stat -Lc%s "/boot/initramfs-$KERNEL_LTS-fallback.img")))
+        fallback_lts_kernel_offset=$((fallback_lts_kernel_offset + "$section_alignment" - fallback_lts_kernel_offset % "$section_alignment"))
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel="$(printf 0x%x "$osrel_offset")" \
-            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux="$(printf 0x%x "$kernel_offset")" \
-            --add-section .initrd=ucode-initramfs.img --change-section-vma .initrd="$(printf 0x%x "$initrd_offset_from_default_kernel")" \
             --add-section .cmdline=cmdline --change-section-vma .cmdline="$(printf 0x%x "$cmdline_offset")" \
+            --add-section .initrd=ucode-initramfs.img --change-section-vma .initrd="$(printf 0x%x "$initrd_offset_from_cmdline")" \
+            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux="$(printf 0x%x "$default_kernel_offset")" \
             /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-unsigned.efi"
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel="$(printf 0x%x "$osrel_offset")" \
-            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux="$(printf 0x%x "$kernel_offset")" \
-            --add-section .initrd="/boot/initramfs-$KERNEL-fallback.img" --change-section-vma .initrd="$(printf 0x%x "$initrd_offset_from_default_kernel")" \
+            --add-section .initrd="/boot/initramfs-$KERNEL-fallback.img" --change-section-vma .initrd="$(printf 0x%x "$initrd_offset_from_osrel")" \
+            --add-section .linux="/boot/vmlinuz-$KERNEL" --change-section-vma .linux="$(printf 0x%x "$fallback_kernel_offset")" \
             /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME-recovery-unsigned.efi"
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel="$(printf 0x%x "$osrel_offset")" \
-            --add-section .linux="/boot/vmlinuz-$KERNEL_LTS" --change-section-vma .linux="$(printf 0x%x "$kernel_offset")" \
-            --add-section .initrd="/boot/initramfs-$KERNEL_LTS-fallback.img" --change-section-vma .initrd="$(printf 0x%x "$initrd_offset_from_lts_kernel")" \
+            --add-section .initrd="/boot/initramfs-$KERNEL_LTS-fallback.img" --change-section-vma .initrd="$(printf 0x%x "$initrd_offset_from_osrel")" \
+            --add-section .linux="/boot/vmlinuz-$KERNEL_LTS" --change-section-vma .linux="$(printf 0x%x "$fallback_lts_kernel_offset")" \
             /usr/lib/systemd/boot/efi/linuxx64.efi.stub "$NAME_LTS-recovery-unsigned.efi"
 
         for image in "$NAME" "$NAME-recovery" "$NAME_LTS-recovery" "$NAME_EFI_SHELL"; do
