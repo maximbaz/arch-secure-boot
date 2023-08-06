@@ -72,13 +72,23 @@ case "$1" in
         cat /boot/*-ucode.img "/boot/initramfs-$KERNEL.img" > ucode-initramfs.img
         cp /usr/share/edk2-shell/x64/Shell_Full.efi "$NAME_EFI_SHELL-unsigned.efi"
 
+        section_alignment="$(objdump -p /usr/lib/systemd/boot/efi/linuxx64.efi.stub | awk '{if ($1 == "SectionAlignment"){print $2}}')"
+        section_alignment=$((16#$section_alignment))
+
         osrel_offset="$(objdump -h /usr/lib/systemd/boot/efi/linuxx64.efi.stub | awk 'NF==7 {size=strtonum("0x"$3); offset=strtonum("0x"$4)} END {print size + offset}')"
-        kernel_offset="$((osrel_offset + $(stat -Lc%s /etc/os-release)))"
+        osrel_offset=$((osrel_offset + "$section_alignment" - osrel_offset % "$section_alignment"))
 
-        initrd_offset_from_default_kernel="$((kernel_offset + $(stat -Lc%s "/boot/vmlinuz-$KERNEL")))"
-        initrd_offset_from_lts_kernel="$((kernel_offset + $(stat -Lc%s "/boot/vmlinuz-$KERNEL_LTS")))"
+        kernel_offset=$((osrel_offset + $(stat -Lc%s /etc/os-release)))
+        kernel_offset=$((kernel_offset + "$section_alignment" - kernel_offset % "$section_alignment"))
 
-        cmdline_offset="$((initrd_offset_from_default_kernel + $(stat -Lc%s ucode-initramfs.img)))"
+        initrd_offset_from_default_kernel=$((kernel_offset + $(stat -Lc%s "/boot/vmlinuz-$KERNEL")))
+        initrd_offset_from_default_kernel=$((initrd_offset_from_default_kernel + "$section_alignment" - initrd_offset_from_default_kernel % "$section_alignment"))
+
+        initrd_offset_from_lts_kernel=$((kernel_offset + $(stat -Lc%s "/boot/vmlinuz-$KERNEL_LTS")))
+        initrd_offset_from_lts_kernel=$((initrd_offset_from_lts_kernel + "$section_alignment" - initrd_offset_from_lts_kernel % "$section_alignment"))
+
+        cmdline_offset=$((initrd_offset_from_default_kernel + $(stat -Lc%s ucode-initramfs.img)))
+        cmdline_offset=$((cmdline_offset + "$section_alignment" - cmdline_offset % "$section_alignment"))
 
         objcopy \
             --add-section .osrel=/etc/os-release --change-section-vma .osrel="$(printf 0x%x "$osrel_offset")" \
