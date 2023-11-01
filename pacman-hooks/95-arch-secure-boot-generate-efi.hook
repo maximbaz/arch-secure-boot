@@ -1,4 +1,5 @@
 [Trigger]
+Operation = Install
 Operation = Upgrade
 Type = Path
 Target = usr/lib/modules/*/vmlinuz
@@ -7,6 +8,7 @@ Target = boot/*-ucode.img
 Target = usr/share/edk2-shell/x64/Shell_Full.efi
 Target = usr/lib/fwupd/efi/fwupdx64.efi
 Target = usr/bin/arch-secure-boot
+Target = usr/lib/systemd/boot/efi/linuxx64.efi.stub
 
 [Action]
 Description = Generating signed EFI boot files
