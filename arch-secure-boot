@@ -139,7 +139,9 @@ case "$1" in
 
         find "$SBKEYSDIR" -mindepth 2 | read || error "Error: keys are not generated yet."
 
-        sbkeysync --verbose --pk
+        chattr -i /sys/firmware/efi/efivars/{PK,KEK,db}*
+        sbkeysync --verbose
+        efi-updatevar -f "$SBKEYSDIR/PK/PK.auth" PK
         ;;
 
     generate-keys)
