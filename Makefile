@@ -1,5 +1,5 @@
 BIN := arch-secure-boot
-VERSION := 1.6.1
+VERSION := 1.6.2
 
 PREFIX ?= /usr
 BIN_DIR = $(DESTDIR)$(PREFIX)/bin
