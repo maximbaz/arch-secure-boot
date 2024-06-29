@@ -60,6 +60,8 @@ Most notably, set `KERNEL=linux-hardened` if you use hardened Linux.
   - Generates EFI images and adds the main one to UEFI **(it's important, only the main one!)**
 - BIOS: Enable Secure Boot
 
+Note: If you want to preserve Microsoft Secure-Boot keys, don't use the `initial-setup` command above as will replace them. Instead, look in the source code to see which commands `initial-setup` executes and run them by hand, replacing `enroll-keys` entirely with `sbctl enroll-keys -m`. This hasn't been tested, but is assumed to work (see [#31](https://github.com/maximbaz/arch-secure-boot/issues/31)).
+
 ## Recovery concept
 
 When the system fails to boot, it is commonly caused by one of the two things:
