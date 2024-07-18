@@ -62,6 +62,8 @@ Most notably, set `KERNEL=linux-hardened` if you use hardened Linux.
 
 Note: If you want to preserve Microsoft Secure-Boot keys, don't use the `initial-setup` command above as will replace them. Instead, look in the source code to see which commands `initial-setup` executes and run them by hand, replacing `enroll-keys` entirely with `sbctl enroll-keys -m`. This hasn't been tested, but is assumed to work (see [#31](https://github.com/maximbaz/arch-secure-boot/issues/31)).
 
+If enrolling keys via `initial-setup` does not work, it might be caused by a bad implementation of UEFI by the manufacturer. In this case, you can try to go to UEFI, enable Setup Mode and enroll the keys from the GUI. Follow [Arch wiki](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Enrolling_keys_in_firmware) for some steps, and pay particular attention not to place Platform Key on the ESP partition, even temporarily!
+
 ## Recovery concept
 
 When the system fails to boot, it is commonly caused by one of the two things:
